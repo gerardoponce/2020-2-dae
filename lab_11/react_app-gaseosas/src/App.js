@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 import './App.css';
- 
+
+const URL = "http://localhost:8000/api/v1/series/";
+
 class App extends Component {
 
 	constructor(props) {
@@ -9,136 +11,96 @@ class App extends Component {
 		super(props);
 		this.state = ({
 			series: [],
-			pos: null,
-			titulo: 'Nuevo',
-			id: 0,
-			nombre: '',
-			fecha: '',
-			rating: '0',
-			categoria: ''
+			count: null,
+			form: {
+				id: 0,
+				name: '',
+				release_date: '',
+				rating: '0',
+				category: ''
+			}
 		})
-	
-		this.cambioNombre = this.cambioNombre.bind(this);
-		this.cambioFecha = this.cambioFecha.bind(this);
-		this.cambioRating = this.cambioRating.bind(this);
-		this.cambioCategoria = this.cambioCategoria.bind(this);
-		this.mostrar = this.mostrar.bind(this);
-		this.eliminar = this.eliminar.bind(this);
-		this.guardar = this.guardar.bind(this);
-	
+	}
+
+	mostrarTodos = () => {
+		axios.get(URL)
+		.then(rs=>{
+			this.setState({series: rs.data})
+		})
+		.catch(error=>{
+			console.log(error.message);
+		})
+	}
+
+	crearSerie = async e => {
+		e.preventDefault();
+		this.setState({
+			count: null
+		})
+		await axios.post(URL+'crear/', this.state.form)
+		.then(rs=>{
+			console.log(rs)
+			this.mostrarTodos();
+		})
+		.catch(error=>{
+			console.log(error.message);
+		})
+		console.log(this.state.form);
+	}
+
+	seleccionarSerie = (serie) => {
+		this.setState({
+			count: serie.id,
+			form: {
+				id: serie.id,
+				name: serie.name,
+				release_date: serie.release_date,
+				rating: serie.rating,
+				category: serie.category
+
+			}
+		})
+	}
+
+	actualizarSerie = () => {
+		this.setState({
+			count:1
+		})
+		axios.put(URL+this.state.form.id+'/actualizar/', this.state.form)
+		.then(rs => {
+			console.log(rs)
+			this.mostrarTodos();
+		})
+	}
+
+	eliminarSerie = () => {
+		this.setState({
+			count: null
+		})
+		axios.delete(URL+this.state.form.id+'/eliminar/')
+		.then(rs => {
+			console.log(rs)
+			this.mostrarTodos();
+		})
 	}
 
 	componentDidMount(){
-		axios.get('http://127.0.0.1:8000/api/v1/series/')
-		.then(res => {
-			this.setState({ series: res.data }); 
-			// console.log(res.data)
+		this.mostrarTodos();
+	}
+
+	handleChange= async e=> {
+		e.persist();
+		await this.setState({
+			form:{
+				...this.state.form,
+				[e.target.name]: e.target.value
+			}
 		});
-	}
-
-  	cambioNombre(e){
-    	this.setState({
-        	nombre: e.target.value
-    	})
-	}
-
-	cambioFecha(e){
-		this.setState({
-			fecha: e.target.value
-		})
-	}
-
-	cambioCategoria(e){
-		this.setState({
-			categoria: e.target.value
-		})
-	}
-
-	cambioRating(e){
-		this.setState({
-			rating: e.target.value
-		})
-	}
-
-	mostrar(cod,index){
-		axios.get('http://127.0.0.1:8000/api/v1/series/'+cod+'/')
-		.then(res =>{
-			this.setState({
-				pos: index,
-				titulo: 'Editar',
-				id: res.data.id,
-				nombre : res.data.name,
-				fecha : res.data.release_date,
-				rating : res.data.rating,
-				categoria : res.data.category
-			})
-		});    
-	}
-
-	guardar(e){
-		e.preventDefault();
-		let cod = this.state.id;
-		let datos = {
-			name : this.state.nombre,
-			release_date : this.state.fecha,
-			rating : this.state.rating,
-			category : this.state.categoria
-		}
-		if(cod>0){ //Editamos un registro
-			axios.put('http://127.0.0.1:8000/api/v1/series/'+cod+'/', datos)
-			.then(res => {
-				let indx = this.state.pos;
-				this.state.series[indx] = res.data;
-				var temp = this.state.series;
-				this.setState({
-					pos: null,
-					titulo: 'Nuevo',
-					id: 0,
-					nombre : '',
-					fecha : '',
-					rating : 0,
-					categoria : '',
-					series : temp
-				});
-			}).catch((error)=>{
-				console.log(error.toString());
-			});  
-		}else{ 
-			//Nuevo registro
-			axios.post('http://127.0.0.1:8000/api/v1/series/crear', datos)
-			.then(res => {
-				this.state.series.push(res.data);
-				var temp = this.state.series;
-				this.setState({
-					id: 0,
-					nombre : '',
-					fecha: '',
-					rating : '',
-					categoria : '',
-					series : temp
-				});
-			}).catch((error)=>{
-				console.log(error.toString());
-			});
-		}
-	}
-
-	eliminar(cod){
-		let rpta = window.confirm("Desea eliminar?");
-		if(rpta){
-			axios.delete('http://127.0.0.1:8000/series/'+cod+'/')
-			.then(res => {
-				var temp = this.state.series.filter((serie)=>serie.id !== cod);
-				this.setState({
-					series: temp
-				})
-			});
-		}
-	}
-
-	
+		console.log(this.state.form);
+	}	
 
   	render() {
+		const {form}=this.state;
     	return (
 		<div className="container text-center">
 			<h1>Lista de Series</h1>
@@ -153,7 +115,7 @@ class App extends Component {
 					</tr>
 				</thead>
 				<tbody>
-					{this.state.series.map( (serie,index) => {
+					{this.state.series.map( serie => {
 						return (
 							<tr key={serie.id}>
 								<td>{serie.name}</td>
@@ -161,35 +123,39 @@ class App extends Component {
 								<td>{serie.rating}</td>
 								<td>{serie.category}</td>
 								<td>
-									<button onClick={()=>this.mostrar(serie.id,index)} className="btn btn-sm btn-success mx-2">Editar</button>
-									<button onClick={()=>this.eliminar(serie.id)} className="btn btn-sm btn-danger mx-2">Eliminar</button>
+									<div className="d-flex justify-content-center">
+										<button onClick={()=>this.seleccionarSerie(serie)} className="btn btn-sm btn-success mx-2">Editar</button>
+										
+										<button className="btn btn-sm btn-danger mx-2" onClick={this.eliminarSerie} type="button">Eliminar</button>
+										
+									</div>
+									
 								</td>
 							</tr>
 						);
 					})}
 				</tbody>
 			</table>
-			<hr/>
-			<h2>{this.state.titulo}</h2>
-			<form onsubmit={this.guardar}>
-				<input type="hidden" value={this.state.id} name="id"/>
+			<hr/>	
+			<form onSubmit={this.state.count!=null ? this.actualizarSerie : this.crearSerie}>
+				<input type="hidden" value={form?form.id:0} name="id"/>
 				<p>
 					Ingrese nombre:
-					<input type="text" value={this.state.nombre} onChange={this.cambioNombre} name="nombre"/>
+					<input type="text" value={form?form.name:''} onChange={this.handleChange} name="name"/>
 				</p>
 				<p>
 					Ingrese rating:
-					<input type="number" value={this.state.rating} onChange={this.cambioRating} name="rating"/>
+					<input type="number" value={form?form.rating:''} onChange={this.handleChange} name="rating"/>
 				</p>
 				<p>
 					Categoria:
-					<input type="text" value={this.state.categoria} onChange={this.cambioCategoria} name="categoria"/>
+					<input type="text" value={form?form.category:''} onChange={this.handleChange} name="category"/>
 				</p>
 				<p>
 					Fecha:
-					<input type="text" value={this.state.fecha} onChange={this.cambioFecha} name="fecha"/>
+					<input type="text" value={form?form.release_date:''} onChange={this.handleChange} name="release_date"/>
 				</p>
-				<p><input type="submit" /></p>
+				<button className="btn btn-primary" type="submit">Guardar</button>
 			</form>
 		</div>
 		)

@@ -12,9 +12,9 @@ def apiOverview(request):
     api_urls = {
         'Index' : '/series/',
         'Show' : '/series/<int:id>/',
-        'Create' : '/series/crear',
-        'Update' : '/series/<int:id>/actualizar',
-        'Delete' : '/series/<int:id>/eliminar',
+        'Create' : '/series/crear/',
+        'Update' : '/series/<int:id>/actualizar/',
+        'Delete' : '/series/<int:id>/eliminar/',
     }
 
     return Response(api_urls)
