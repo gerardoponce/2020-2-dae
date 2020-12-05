@@ -1,0 +1,25 @@
+from django.db import models
+
+# Create your models here.
+class Serie(models.Model):
+    # Categorias
+    HORROR = 'horror'    
+    COMEDY = 'comedy'    
+    ACTION = 'action'    
+    DRAMA = 'drama'
+
+    CATEGORIES_CHOICES = (
+        (HORROR, 'Horror'),        
+        (COMEDY, 'Comedy'),        
+        (ACTION, 'Action'),        
+        (DRAMA, 'Drama')    
+    )
+    # Modelo
+    name = models.CharField(max_length=100)    
+    release_date = models.DateField()    
+    rating = models.IntegerField(default=0)    
+    category = models.CharField(max_length=10, choices=CATEGORIES_CHOICES)
+    objects = models.Manager()
+
+    def __str__(self):
+        return self.name
